@@ -1,31 +1,77 @@
-<script setup>
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <Layout>
+    <h2 class="mb-8 text-4xl font-bold text-center capitalize">
+      News Section : <span class="text-green-700">{{ section }}</span>
+    </h2>
+    <NewsFilter v-model="section" :fetch="fetchNews" />
+    <NewsList :posts="posts" />
+  </Layout>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
+<script>
+import Layout from "./components/Layout.vue"
+import NewsFilter from "./components/NewsFilter.vue"
+import NewsList from "./components/NewsList.vue"
+
+import axios from "axios"
+const api = import.meta.env.VITE_API_KEY
+
+export default {
+  components: {
+    Layout,
+    NewsFilter,
+    NewsList,
+  },
+  data() {
+    return {
+      section: "home",
+      posts: [],
+    }
+  },
+  methods: {
+    // Helper function for extracting a nested image object
+    extractImage(post) {
+      const defaultImg = {
+        url: "https://via.placeholder.com/210x140?text=N/A",
+        caption: post.title,
+      }
+      if (!post.multimedia) {
+        return defaultImg
+      }
+      let imgObj = post.multimedia.find(
+        media => media.format === "mediumThreeByTwo210"
+      )
+      return imgObj ? imgObj : defaultImg
+    },
+    async fetchNews() {
+      try {
+        const url = `https://api.nytimes.com/svc/topstories/v2/${this.section}.json?api-key=${api}`
+        const response = await axios.get(url)
+        const results = response.data.results
+        this.posts = results.map(post => ({
+          title: post.title,
+          abstract: post.abstract,
+          url: post.url,
+          thumbnail: this.extractImage(post).url,
+          caption: this.extractImage(post).caption,
+          byline: post.byline,
+          published_date: post.published_date,
+        }))
+      } catch (err) {
+        if (err.response) {
+          // client received an error response (5xx, 4xx)
+          console.log("Server Error:", err)
+        } else if (err.request) {
+          // client never received a response, or request never left
+          console.log("Network Error:", err)
+        } else {
+          console.log("Client Error:", err)
+        }
+      }
+    },
+  },
+  mounted() {
+    this.fetchNews()
+  },
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+</script>
