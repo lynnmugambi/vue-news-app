@@ -39,7 +39,7 @@ export default {
         return defaultImg
       }
       let imgObj = post.multimedia.find(
-        media => media.format === "mediumThreeByTwo210"
+        media => media.format === "threeByTwoSmallAt2X"
       )
       return imgObj ? imgObj : defaultImg
     },
